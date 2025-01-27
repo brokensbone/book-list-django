@@ -37,7 +37,7 @@ resource "aws_instance" "example_server" {
   user_data=<<EOF
 #!/bin/bash
 echo "Copying the SSH Key to the server"
-echo -e "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDzhdCoWE/CiY3laW9R/I5UEhQs7krz8ur8OOg7su5MJ example@example" >> /home/ubuntu/.ssh/authorized_keys
+echo -e "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDzhdCoWE/CiY3laW9R/I5UEhQs7krz8ur8OOg7su5MJ example@example" >> /home/ec2-user/.ssh/authorized_keys
 EOF
 }
 
