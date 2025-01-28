@@ -55,6 +55,7 @@ resource "aws_security_group_rule" "allow_ssh" {
 resource "aws_instance" "main-host" {
   ami           = "ami-04ba8620fc44e2264"                    
   instance_type = "t2.micro"
+  iam_instance_profile = aws_iam_instance_profile.demo-profile.name
   vpc_security_group_ids = [ "${aws_security_group.sec-group-one.id}" ]
   subnet_id = "${aws_subnet.subnet-one.id}"
   tags = {
@@ -69,6 +70,8 @@ yum install -y docker
 service docker start
 usermod -a -G docker ec2-user
 docker run --rm -d -p 80:80 traefik/whoami
+aws ecr get-login-password --region eu-west-2 | docker login --username AWS --password-stdin 805091204988.dkr.ecr.eu-west-2.amazonaws.com
+docker pull 805091204988.dkr.ecr.eu-west-2.amazonaws.com/testing/books:0.1
 EOF
 }
 
@@ -87,4 +90,52 @@ output "instance_ip_addr" {
 }
 output "eip_addr" {
   value = aws_eip.ip-network-one.public_ip
+}
+
+resource "aws_iam_policy" "ecr_policy" {
+  name = "ECR-Policy"
+  policy = jsonencode({
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": [
+                "ecr:GetDownloadUrlForLayer",
+                "ecr:BatchGetImage",
+                "ecr:DescribeImages",
+                "ecr:GetAuthorizationToken",
+                "ecr:ListImages"
+            ],
+            "Resource": "*"
+        }
+    ]
+  })  
+}
+resource "aws_iam_role" "demo-role" {
+  name = "ec2_role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Sid    = "RoleForEC2"
+        Principal = {
+          Service = "ec2.amazonaws.com"
+        }
+      },
+    ]
+  })
+}
+
+resource "aws_iam_policy_attachment" "demo-attach" {
+  name       = "demo-attachment"
+  roles      = [aws_iam_role.demo-role.name]
+  policy_arn = aws_iam_policy.ecr_policy.arn
+}
+
+resource "aws_iam_instance_profile" "demo-profile" {
+  name = "demo_profile"
+  role = aws_iam_role.demo-role.name
 }
