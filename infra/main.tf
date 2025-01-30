@@ -42,6 +42,14 @@ resource "aws_security_group_rule" "allow_http" {
   protocol          = "tcp" 
   cidr_blocks       = ["0.0.0.0/0"] 
 }
+resource "aws_security_group_rule" "allow_http2" {
+  security_group_id = aws_security_group.sec-group-one.id
+  type              = "ingress"
+  from_port         = 8080 
+  to_port           = 8080  
+  protocol          = "tcp" 
+  cidr_blocks       = ["0.0.0.0/0"] 
+}
 resource "aws_security_group_rule" "allow_ssh" {
   security_group_id = aws_security_group.sec-group-one.id
   type              = "ingress"   
@@ -71,7 +79,8 @@ service docker start
 usermod -a -G docker ec2-user
 docker run --rm -d -p 80:80 traefik/whoami
 aws ecr get-login-password --region eu-west-2 | docker login --username AWS --password-stdin 805091204988.dkr.ecr.eu-west-2.amazonaws.com
-docker pull 805091204988.dkr.ecr.eu-west-2.amazonaws.com/testing/books:0.1
+docker pull 805091204988.dkr.ecr.eu-west-2.amazonaws.com/testing/books:latest
+docker run --rm -d -p 8080:8000 805091204988.dkr.ecr.eu-west-2.amazonaws.com/testing/books:latest
 EOF
 }
 
